@@ -4,12 +4,7 @@ name = "healthcare-supply-chain-dashboard"
 version = "1.0.0"
 requires-python = ">=3.10,<3.13"
 dependencies = [
-    "Flask",
-    "pandas",
-    "numpy",
-    "gymnasium",
-    "stable-baselines3",
-    "torch"
+    "Flask"
 ]
 
 [tool.vercel]
