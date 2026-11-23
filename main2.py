@@ -124,48 +124,41 @@ def recommend():
     }
 
     return jsonify({
-    **dashboard_data,
-    "initial_capital": float(
-        env.unwrapped.initial_balance
-    ),
-    "investment_actions": [
-        float(x) for x in investment_actions
-    ],
+        **dashboard_data,
 
-    "investment_by_area": {
-        str(k): float(v)
-        for k, v in env.unwrapped.investment_by_area.items()
-    },
-    "cumulative_invested": float(
-        info.get( "capital_remaining",
-            env.unwrapped.investment_capital
-        )
-    ),
-    "investment_reward": float(
-        info.get("investment_reward", 0)
-    ),
+        "investment_actions": [
+            float(x) for x in investment_actions
+        ],
 
-    "capital_remaining": float(
-        info.get("capital_remaining", 0)
-    ),
+        "investment_by_area": {
+            str(k): float(v)
+            for k, v in base_env.investment_by_area.items()
+        },
 
-    "reward": float(reward),
+        "investment_reward": float(
+            info.get("investment_reward", 0.0)
+        ),
 
-    "terminated": bool(terminated),
-    "truncated": bool(truncated),
+        "reward": float(reward),
 
-    "operational_results": [
-        {
-            str(k): (
-                float(v)
-                if isinstance(v, (np.integer, np.floating))
-                else v
-            )
-            for k, v in result.items()
-        }
-        for result in info.get("pair_results", [])
-    ]
-})
+        "terminated": bool(terminated),
+        "truncated": bool(truncated),
+
+        "operational_results": [
+            {
+                str(k): (
+                    float(v)
+                    if isinstance(v, (np.integer, np.floating))
+                    else v
+                )
+                for k, v in result.items()
+            }
+            for result in info.get("pair_results", [])
+        ]
+    })
+
+
+    
 @app.route("/investment-history")
 def investment_history():
     import json
