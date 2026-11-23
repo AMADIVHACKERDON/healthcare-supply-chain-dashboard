@@ -152,20 +152,10 @@
     <section class="card form-card">
       <h2 class="panel-title">Supply-chain observation</h2>
       <p class="form-intro">Enter the current observation as JSON and submit it to the trained recommendation model.</p>
-      <label for="observation">Observation JSON</label>
-      <textarea id="observation" spellcheck="false">{
-  "stock_on_hand": [[100, 200]],
-  "forecast_demand": [[80, 150]],
-  "stockout_history": [[0, 0]],
-  "unmet_demand_history": [[0, 0]],
-  "inventory_coverage": [[1.25, 1.33]],
-  "stockout_risk": [[0, 0]],
-  "capital": [1000000]
-}</textarea>
+      
       <div class="actions">
         <button class="primary-btn" id="submitBtn" type="button" onclick="getRecommendation()">Generate recommendation</button>
-        <button class="secondary-btn" type="button" onclick="loadSample()">Load sample</button>
-      </div>
+             </div>
       <div id="status" class="status" role="status" aria-live="polite"></div>
     </section>
 
@@ -231,49 +221,50 @@
       document.getElementById("observation").value = JSON.stringify(sample, null, 2);
     }
 
+    
     async function getRecommendation() {
-      const status = document.getElementById("status");
-      const submitBtn = document.getElementById("submitBtn");
-      const result = document.getElementById("result");
-      status.className = "status";
-      result.style.display = "none";
+        const status = document.getElementById("status");
+        const submitBtn = document.getElementById("submitBtn");
+        const result = document.getElementById("result");
 
-      let observation;
-      try {
-        observation = JSON.parse(document.getElementById("observation").value);
-      } catch (error) {
-        status.textContent = "Invalid JSON. Check the observation and try again.";
-        status.className = "status error";
-        return;
-      }
+        status.className = "status";
+        result.style.display = "none";
 
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Processing…";
-      status.textContent = "Sending observation to the recommendation model…";
-      try {
-        // Send the observation entered by the user, not an empty request body.
-        const response = await fetch("/recommend", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ observation })
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || "The recommendation request failed.");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Loading…";
+        status.textContent = "Loading saved PPO recommendation results…";
 
-        setText("strategy", data.strategy ?? "Not provided");
-        setText("strategyName", data.strategy_name ?? "Not provided");
-        setText("rawResponse", JSON.stringify(data, null, 2));
-        result.style.display = "block";
-        status.textContent = "Recommendation successfully received.";
-        status.className = "status success";
-      } catch (error) {
-        status.textContent = "Error: " + error.message;
-        status.className = "status error";
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Generate recommendation";
-      }
+        try {
+            const response = await fetch("/recommend", {
+                method: "GET"
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.error || "Unable to load recommendation results."
+                );
+            }
+
+            setText("strategy", data.strategy ?? "Not provided");
+            setText("strategyName", data.strategy_name ?? "Not provided");
+            setText("rawResponse", JSON.stringify(data, null, 2));
+
+            result.style.display = "block";
+            status.textContent = "PPO results successfully loaded.";
+            status.className = "status success";
+
+        } catch (error) {
+            status.textContent = "Error: " + error.message;
+            status.className = "status error";
+
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Load PPO Results";
+        }
     }
+
     async function refreshDashboard() {
 
     const response = await fetch("/recommend", {
