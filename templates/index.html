@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supply Chain Intelligence Dashboard</title>
+  <style>
+    :root {
+      --navy: #142d4e;
+      --navy-2: #1d416b;
+      --blue: #3267d6;
+      --teal: #168875;
+      --ink: #182638;
+      --muted: #68778b;
+      --line: #e5eaf1;
+      --page: #f4f7fb;
+      --card: #ffffff;
+      --soft: #f7f9fc;
+      --red: #c94b50;
+      --amber: #b7791f;
+      --shadow: 0 8px 28px rgba(23, 42, 69, .06);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--page); color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      line-height: 1.5; padding: 28px;
+    }
+    .container { max-width: 1240px; margin: 0 auto; }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 20px;
+      background: linear-gradient(115deg, var(--navy), var(--navy-2)); color: white;
+      padding: 28px 32px; border-radius: 18px; margin-bottom: 24px;
+      box-shadow: 0 12px 30px rgba(20, 45, 78, .14);
+    }
+    .eyebrow { color: #b9cbe0; text-transform: uppercase; letter-spacing: .12em; font-size: 11px; font-weight: 750; margin-bottom: 7px; }
+    h1 { font-size: clamp(24px, 3vw, 32px); line-height: 1.15; letter-spacing: -.03em; }
+    .topbar p { color: #d4dfeb; margin-top: 8px; font-size: 14px; }
+    .live-pill { white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid rgba(255,255,255,.2); border-radius: 999px; color: #e8f7f3; font-size: 12px; font-weight: 700; }
+    .live-dot { width: 8px; height: 8px; background: #54d2a5; border-radius: 50%; box-shadow: 0 0 0 4px rgba(84,210,165,.14); }
+    .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin: 26px 2px 13px; }
+    .section-heading h2 { font-size: 18px; letter-spacing: -.02em; }
+    .section-heading p { color: var(--muted); font-size: 12px; margin-top: 3px; }
+    .grid { display: grid; gap: 16px; }
+    .metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .two-col { grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 15px; padding: 21px; box-shadow: var(--shadow); min-width: 0; }
+    .metric-label { color: var(--muted); font-size: 12px; font-weight: 650; }
+    .metric-value { font-size: clamp(22px, 2.4vw, 29px); font-weight: 780; letter-spacing: -.04em; margin-top: 9px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+    .metric-note { color: var(--muted); font-size: 11px; margin-top: 5px; }
+    .metric-mark { width: 34px; height: 4px; border-radius: 8px; margin-top: 16px; background: var(--blue); }
+    .metric-mark.teal { background: var(--teal); }
+    .metric-mark.gold { background: #d49a37; }
+    .metric-mark.red { background: #c96a6a; }
+    .panel-title { font-size: 15px; font-weight: 750; margin-bottom: 4px; }
+    .panel-subtitle { color: var(--muted); font-size: 12px; margin-bottom: 20px; }
+    .allocation-list { display: grid; gap: 18px; }
+    .allocation-head { display: flex; justify-content: space-between; gap: 12px; font-size: 12px; margin-bottom: 8px; }
+    .allocation-head strong { font-weight: 700; }
+    .allocation-head span { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .track { height: 9px; border-radius: 20px; background: #edf1f6; overflow: hidden; }
+    .fill { height: 100%; border-radius: inherit; background: var(--blue); width: 0; transition: width .25s ease; }
+    .fill.teal { background: var(--teal); }
+    .fill.gold { background: #d49a37; }
+    .fill.purple { background: #8872c8; }
+    .performance-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .performance-item { background: var(--soft); border: 1px solid #edf1f6; border-radius: 11px; padding: 15px; }
+    .performance-item span { display: block; color: var(--muted); font-size: 11px; }
+    .performance-item strong { display: block; font-size: 22px; margin-top: 5px; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+    .form-card { margin-top: 25px; }
+    .form-intro { color: var(--muted); font-size: 13px; margin: 5px 0 17px; }
+    label { display: block; font-size: 12px; font-weight: 750; margin-bottom: 8px; }
+    textarea { width: 100%; min-height: 230px; padding: 15px; border: 1px solid #d9e1eb; border-radius: 10px; resize: vertical; background: #fbfcfe; color: #243449; font: 13px/1.6 Consolas, Monaco, monospace; outline: none; }
+    textarea:focus { border-color: #7d9fe5; box-shadow: 0 0 0 3px rgba(50,103,214,.1); }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 13px; }
+    button { border: 0; border-radius: 9px; padding: 11px 16px; cursor: pointer; font-size: 12px; font-weight: 750; transition: .15s ease; }
+    button:disabled { opacity: .6; cursor: wait; }
+    .primary-btn { background: var(--blue); color: white; }
+    .primary-btn:hover { background: #2555bd; }
+    .secondary-btn { background: #edf2f8; color: #30445f; }
+    .secondary-btn:hover { background: #e2eaf4; }
+    .status { min-height: 20px; margin-top: 12px; font-size: 12px; }
+    .status.error { color: var(--red); }
+    .status.success { color: var(--teal); }
+    .result-card { display: none; margin-top: 18px; }
+    .result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 15px 0; }
+    .result-cell { background: var(--soft); border-radius: 10px; padding: 13px; }
+    .result-cell span { color: var(--muted); font-size: 11px; display: block; }
+    .result-cell strong { display: block; margin-top: 4px; font-size: 15px; }
+    pre { white-space: pre-wrap; word-break: break-word; font: 12px/1.6 Consolas, Monaco, monospace; background: #f7f9fc; padding: 14px; border-radius: 9px; max-height: 360px; overflow: auto; }
+    .history-card { margin-top: 25px; }
+    .table-wrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 12px; }
+    th { text-align: left; color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; font-weight: 750; background: #f8fafd; }
+    th, td { padding: 12px 13px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    td { font-variant-numeric: tabular-nums; }
+    tbody tr:last-child td { border-bottom: 0; }
+    .empty-state, .error-state { padding: 22px; border: 1px dashed #d7e0eb; border-radius: 11px; color: var(--muted); font-size: 12px; text-align: center; background: #fbfcfe; }
+    .error-state { color: var(--red); }
+    .history-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .history-toolbar p { color: var(--muted); font-size: 11px; }
+    footer { text-align: center; color: #8290a2; font-size: 11px; padding: 28px 0 8px; }
+    @media (max-width: 900px) { .metrics { grid-template-columns: repeat(2, minmax(0,1fr)); } .two-col { grid-template-columns: 1fr; } }
+    @media (max-width: 580px) { body { padding: 13px; } .topbar { padding: 22px 19px; align-items: flex-start; flex-direction: column; } .card { padding: 17px; } .metrics { gap: 10px; } .metric-value { font-size: 21px; } .section-heading { margin-top: 22px; } .result-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">Reinforcement learning · Supply chain</div>
+        <h1>Supply Chain Intelligence</h1>
+        <p>Investment decisions, inventory performance and pharmaceutical distribution optimization.</p>
+      </div>
+      <div class="live-pill"><span class="live-dot"></span> Dashboard</div>
+    </header>
+
+    <div class="section-heading">
+      <div><h2>Investment overview</h2><p>Latest recorded investment position</p></div>
+      <button class="secondary-btn" type="button" onclick="loadInvestmentHistory()">Refresh dashboard</button>
+    </div>
+    <section class="grid metrics" aria-label="Investment summary">
+      <article class="card"><div class="metric-label">Initial capital</div><div class="metric-value" id="initialCapital">—</div><div class="metric-note">Starting investment budget</div><div class="metric-mark"></div></article>
+      <article class="card"><div class="metric-label">Cumulative invested</div><div class="metric-value" id="cumulativeInvested">—</div><div class="metric-note">Total allocated so far</div><div class="metric-mark teal"></div></article>
+      <article class="card"><div class="metric-label">Capital remaining</div><div class="metric-value" id="capitalRemaining">—</div><div class="metric-note">Uninvested capital</div><div class="metric-mark gold"></div></article>
+      <article class="card"><div class="metric-label">Latest investment reward</div><div class="metric-value" id="investmentReward">—</div><div class="metric-note">Reward for the latest recorded step</div><div class="metric-mark red"></div></article>
+    </section>
+
+    <div class="section-heading"><div><h2>Investment and operational performance</h2><p>Allocation across the four technology areas and current supply-chain indicators</p></div></div>
+    <section class="grid two-col">
+      <article class="card">
+        <h3 class="panel-title">Investment by technology</h3>
+        <p class="panel-subtitle">Cumulative allocation recorded for each feature</p>
+        <div id="investmentAreas" class="allocation-list"><div class="empty-state">Investment allocation will appear when history is available.</div></div>
+        <div id="initial-capital">—</div>
+        <div id="cumulative-invested">—</div>
+        <div id="capital-remaining">—</div>
+        <div id="latest-investment-reward">—</div>
+      </article>
+      <article class="card">
+        <h3 class="panel-title">Operational performance</h3>
+        <p class="panel-subtitle">Latest measured supply-chain outcomes</p>
+        <div class="performance-grid">
+          <div class="performance-item"><span>Service level</span><strong id="serviceLevel">—</strong></div>
+          <div class="performance-item"><span>Stockout rate</span><strong id="stockoutRate">—</strong></div>
+          <div class="performance-item"><span>Unmet demand rate</span><strong id="unmetDemandRate">—</strong></div>
+          <div class="performance-item"><span>Latest weekly investment</span><strong id="weeklyInvestment">—</strong></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="card form-card">
+      <h2 class="panel-title">Supply-chain observation</h2>
+      <p class="form-intro">Enter the current observation as JSON and submit it to the trained recommendation model.</p>
+      <label for="observation">Observation JSON</label>
+      <textarea id="observation" spellcheck="false">{
+  "stock_on_hand": [[100, 200]],
+  "forecast_demand": [[80, 150]],
+  "stockout_history": [[0, 0]],
+  "unmet_demand_history": [[0, 0]],
+  "inventory_coverage": [[1.25, 1.33]],
+  "stockout_risk": [[0, 0]],
+  "capital": [1000000]
+}</textarea>
+      <div class="actions">
+        <button class="primary-btn" id="submitBtn" type="button" onclick="getRecommendation()">Generate recommendation</button>
+        <button class="secondary-btn" type="button" onclick="loadSample()">Load sample</button>
+      </div>
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+    </section>
+
+    <section class="card result-card" id="result">
+      <h2 class="panel-title">RL model recommendation</h2>
+      <div class="result-grid">
+        <div class="result-cell"><span>Strategy number</span><strong id="strategy">—</strong></div>
+        <div class="result-cell"><span>Strategy name</span><strong id="strategyName">—</strong></div>
+      </div>
+      <h3 class="panel-title" style="margin: 14px 0 9px;">Complete API response</h3>
+      <pre id="rawResponse"></pre>
+    </section>
+
+    <section class="card history-card">
+      <div class="history-toolbar">
+        <div><h2 class="panel-title">Investment history</h2><p>Weekly investment, cumulative capital and performance trend</p></div>
+        <span id="historyCount" class="metric-label">0 records</span>
+      </div>
+      <div id="investmentHistory"><div class="empty-state">Loading investment history…</div></div>
+    </section>
+
+    <footer>Supply Chain Optimization · Reinforcement Learning · PPO / RL Deployment</footer>
+  </main>
+
+  <script>
+    const areaLabels = {
+      forecasting: "Demand forecasting",
+      inventory_management: "Inventory management",
+      distribution: "Distribution",
+      supply_chain_capacity: "Supply-chain capacity"
+    };
+    const areaColors = ["", "teal", "gold", "purple"];
+    const money = value => {
+      const number = Number(value);
+      return Number.isFinite(number)
+        ? new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(number)
+        : "—";
+    };
+    const number = value => {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : null;
+    };
+    const percent = value => {
+      const n = number(value);
+      return n === null ? "—" : `${(n * 100).toFixed(1)}%`;
+    };
+    const plain = value => {
+      const n = number(value);
+      return n === null ? "—" : n.toFixed(2);
+    };
+    function setText(id, value) { document.getElementById(id).textContent = value; }
+
+    function loadSample() {
+      const sample = {
+        stock_on_hand: [[100, 200]],
+        forecast_demand: [[80, 150]],
+        stockout_history: [[0, 0]],
+        unmet_demand_history: [[0, 0]],
+        inventory_coverage: [[1.25, 1.33]],
+        stockout_risk: [[0, 0]],
+        capital: [1000000]
+      };
+      document.getElementById("observation").value = JSON.stringify(sample, null, 2);
+    }
+
+    async function getRecommendation() {
+      const status = document.getElementById("status");
+      const submitBtn = document.getElementById("submitBtn");
+      const result = document.getElementById("result");
+      status.className = "status";
+      result.style.display = "none";
+
+      let observation;
+      try {
+        observation = JSON.parse(document.getElementById("observation").value);
+      } catch (error) {
+        status.textContent = "Invalid JSON. Check the observation and try again.";
+        status.className = "status error";
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Processing…";
+      status.textContent = "Sending observation to the recommendation model…";
+      try {
+        // Send the observation entered by the user, not an empty request body.
+        const response = await fetch("/recommend", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ observation })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "The recommendation request failed.");
+
+        setText("strategy", data.strategy ?? "Not provided");
+        setText("strategyName", data.strategy_name ?? "Not provided");
+        setText("rawResponse", JSON.stringify(data, null, 2));
+        result.style.display = "block";
+        status.textContent = "Recommendation successfully received.";
+        status.className = "status success";
+      } catch (error) {
+        status.textContent = "Error: " + error.message;
+        status.className = "status error";
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Generate recommendation";
+      }
+    }
+    async function refreshDashboard() {
+
+    const response = await fetch("/recommend", {
+        method: "POST"
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error || "Dashboard refresh failed");
+    }
+
+    const formatINR = value =>
+        new Intl.NumberFormat("en-IN", {
+            style: "currency",
+            currency: "INR",
+            maximumFractionDigits: 2
+        }).format(value);
+
+    document.getElementById("initial-capital").textContent =
+        formatINR(data.initial_capital);
+
+    document.getElementById("cumulative-invested").textContent =
+        formatINR(data.cumulative_invested);
+
+    document.getElementById("capital-remaining").textContent =
+        formatINR(data.capital_remaining);
+
+    document.getElementById("latest-investment-reward").textContent =
+        Number(data.latest_investment_reward).toFixed(2);
+}
+
+    function renderAreas(areaData) {
+      const container = document.getElementById("investmentAreas");
+      const entries = Object.entries(areaData || {});
+      if (!entries.length) {
+        container.innerHTML = '<div class="empty-state">No technology allocation has been recorded yet.</div>';
+        return;
+      }
+      const total = entries.reduce((sum, [, amount]) => sum + (number(amount) || 0), 0);
+      container.innerHTML = entries.map(([area, amount], index) => {
+        const value = number(amount) || 0;
+        const share = total > 0 ? value / total * 100 : 0;
+        const label = areaLabels[area] || area.replaceAll("_", " ");
+        return `<div>
+          <div class="allocation-head"><strong>${label}</strong><span>${money(value)} · ${share.toFixed(1)}%</span></div>
+          <div class="track"><div class="fill ${areaColors[index % areaColors.length]}" style="width:${Math.max(0, Math.min(100, share))}%"></div></div>
+        </div>`;
+      }).join("");
+    }
+
+    function renderHistory(history) {
+      const container = document.getElementById("investmentHistory");
+      setText("historyCount", `${history.length} record${history.length === 1 ? "" : "s"}`);
+      if (!history.length) {
+        container.innerHTML = '<div class="empty-state">No investment history available yet. Records will appear after the agent has completed decisions and the history has been saved.</div>';
+        return;
+      }
+      const rows = history.slice(-20).reverse().map(item => `
+        <tr>
+          <td>${item.week ?? "—"}</td>
+          <td>${money(item.total_invested)}</td>
+          <td>${money(item.cumulative_invested)}</td>
+          <td>${money(item.capital_remaining)}</td>
+          <td>${plain(item.investment_reward)}</td>
+          <td>${percent(item.service_level)}</td>
+          <td>${percent(item.stockout_rate)}</td>
+        </tr>`).join("");
+      container.innerHTML = `<div class="table-wrap"><table>
+        <thead><tr><th>Week</th><th>Weekly investment</th><th>Cumulative investment</th><th>Capital remaining</th><th>Investment reward</th><th>Service level</th><th>Stockout rate</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`;
+    }
+
+    async function loadInvestmentHistory() {
+      const container = document.getElementById("investmentHistory");
+      try {
+        const response = await fetch("/investment-history", { cache: "no-store" });
+        if (!response.ok) throw new Error(`History request failed (${response.status}).`);
+        const history = await response.json();
+        if (!Array.isArray(history)) throw new Error("The investment-history endpoint did not return a list.");
+        if (!history.length) {
+          ["initialCapital", "cumulativeInvested", "capitalRemaining", "investmentReward", "serviceLevel", "stockoutRate", "unmetDemandRate", "weeklyInvestment"].forEach(id => setText(id, "—"));
+          renderAreas({});
+          renderHistory([]);
+          return;
+        }
+        const latest = history[history.length - 1];
+        setText("initialCapital", money(latest.initial_capital));
+        setText("cumulativeInvested", money(latest.cumulative_invested));
+        setText("capitalRemaining", money(latest.capital_remaining));
+        setText("investmentReward", plain(latest.investment_reward));
+        setText("serviceLevel", percent(latest.service_level));
+        setText("stockoutRate", percent(latest.stockout_rate));
+        setText("unmetDemandRate", percent(latest.unmet_demand_rate));
+        setText("weeklyInvestment", money(latest.total_invested));
+        renderAreas(latest.investment_by_area);
+        renderHistory(history);
+      } catch (error) {
+        container.innerHTML = `<div class="error-state">Could not load investment history: ${error.message}</div>`;
+      }
+    }
+
+    loadInvestmentHistory();
+  </script>
+</body>
+</html>
